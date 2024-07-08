@@ -25,6 +25,10 @@ function pca_basis(
     u::AbstractMatrix;
     device = Lux.cpu_device(),
 )
+    if length(u) > 10^8
+        device = Lux.cpu_device()
+    end
+
     F = svd(u |> device)
     F.U[:, 1:R] |> Lux.cpu_device()
 end
@@ -260,8 +264,20 @@ function evolve_PCA(
     #==============#
     # get initial state
     #==============#
-    U0_norm = normalizedata(U0, md.ū, md.σu)
-    p0 = P' * U0_norm[1,:]
+
+    # only out_dim == 1 supported
+    pl, Ul = begin
+        Ud_norm = normalizedata(Ud[1, :, :], md.ū, md.σu)
+        pl = P' * Ud_norm
+
+        Ul = unnormalizedata(P * pl, md.ū, md.σu)
+        Ul = reshape(Ul, 1, size(Ul)...)
+        Ul = repeat(Ul, out_dim, 1)
+
+        pl, Ul
+    end
+
+    p0 = pl[:, 1]
 
     #==============#
     # get model
@@ -312,7 +328,7 @@ function evolve_PCA(
 
     # save files
     filename = joinpath(outdir, "evolve$(case).jld2")
-    jldsave(filename; Xdata, Tdata, Udata = Ud, Upred = Up, Ppred = ps)
+    jldsave(filename; Xdata, Tdata, Udata = Ud, Upred = Up, Ppred = ps, Plrnd = pl, Ulrnd = Ul)
 
     # print error metrics
     @show sqrt(mse(Up, Ud) / mse(Ud, 0 * Ud))

@@ -69,7 +69,7 @@ function makedata_CAE(
 
     # make arrays
     _u = permutedims(_u, (2, 1, 3, 4)) # [Nx, out_dim, Nbatch, Ntime]
-    u_ = permutedims(_u, (2, 1, 3, 4))
+    u_ = permutedims(u_, (2, 1, 3, 4))
 
     _u = reshape(_u, grid..., out_dim, _Ns)
     u_ = reshape(u_, grid..., out_dim, Ns_)
@@ -133,7 +133,7 @@ function train_CAE(
 
     displaymetadata(metadata)
 
-    plot_training(ST...) |> display
+    plot_training!(ST...) |> display
 
     model, ST, metadata
 end
@@ -235,7 +235,7 @@ function postprocess_CAE(
         # parameter plots
         linewidth = 2.0
         palette = :tab10
-        colors = (:reds, :greens, :blues, cgrad(:thermal), cgrad(:acton), cgrad(:viridis))
+        colors = (:reds, :greens, :blues, cgrad(:thermal), cgrad(:acton), cgrad(:viridis), cgrad(:thermal), cgrad(:viridis))
         shapes = (:circle, :square, :star,)
 
         plt = plot(; title = "Parameter scatter plot")
@@ -287,91 +287,91 @@ function postprocess_CAE(
     # Compare evolution with training plots
     #==============#
 
-    for (i, case) in  enumerate(_Ib)
-        ev = jldopen(joinpath(outdir, "evolve$(case).jld2"))
-
-        ps = ev["Ppred"]
-        Ue = ev["Upred"]
-
-        _p = _ps[:, i, :]
-        Uh = _Upred[:, :, i, :] # encoder/decoder prediction
-        Ud = _Udata[:, :, i, :]
-
-        fieldplot(Xdata, Tdata, Uh, Ue, grid, outdir, "compare", case)
-
-        # Compare u
-        println("#=======================#")
-        println("Dynamics Solve")
-        @show norm(Ue - Ud, 2) / length(Ud)
-        @show norm(Ue - Ud, Inf)
-
-        println("#=======================#")
-        println("Encoder Prediction")
-        @show norm(Uh - Ud, 2) / length(Ud)
-        @show norm(Uh - Ud, Inf)
-
-        ###
-        # Compare ũ
-        ###
-
-        println("#=======================#")
-        println("Dynamics Solve vs Encoder Prediction")
-        @show norm(ps - _p, 2) / length(ps)
-        @show norm(ps - _p, Inf)
-
-        plt = plot(; title = L"$\tilde{u}$ distribution, case " * "$(case)")
-        plt = make_param_scatterplot(_p, Tdata; plt, label = "Encoder prediction", color = :reds, cbar = false)
-        plt = make_param_scatterplot(ps, Tdata; plt, label = "Dynamics solve", color = :blues, cbar = false)
-        png(plt, joinpath(outdir, "compare_p_scatter_case$(case)"))
-
-        plt = plot(; title = L"$\tilde{u}$ evolution, case " * "$(case)")
-        plot!(plt, Tdata, ps'; w = 3.0, label = "Dynamics solve", palette = :tab10)
-        plot!(plt, Tdata, _p'; w = 4.0, label = "Encoder prediction", style = :dash, palette = :tab10)
-        png(plt, joinpath(outdir, "compare_p_case$(case)"))
-    end
-
-    for (i, case) in  enumerate(Ib_)
-        ev = jldopen(joinpath(outdir, "evolve$(case).jld2"))
-
-        ps = ev["Ppred"]
-        Ue = ev["Upred"]
-
-        p_ = ps_[:, i, :]
-        Uh = Upred_[:, :, i, :] # encoder/decoder prediction
-        Ud = Udata_[:, :, i, :]
-
-        fieldplot(Xdata, Tdata, Uh, Ue, grid, outdir, "compare", case)
-
-        # Compare u
-        println("#=======================#")
-        println("Dynamics Solve")
-        @show norm(Ue - Ud, 2) / length(Ud)
-        @show norm(Ue - Ud, Inf)
-
-        println("#=======================#")
-        println("Encoder Prediction")
-        @show norm(Uh - Ud, 2) / length(Ud)
-        @show norm(Uh - Ud, Inf)
-
-        ###
-        # Compare ũ
-        ###
-
-        println("#=======================#")
-        println("Dynamics Solve vs Encoder Prediction")
-        @show norm(ps - p_, 2) / length(ps)
-        @show norm(ps - p_, Inf)
-
-        plt = plot(; title = L"$\tilde{u}$ distribution, case " * "$(case)")
-        plt = make_param_scatterplot(p_, Tdata; plt, label = "Encoder prediction", color = :reds, cbar = false)
-        plt = make_param_scatterplot(ps, Tdata; plt, label = "Dynamics solve", color = :blues, cbar = false)
-        png(plt, joinpath(outdir, "compare_p_scatter_case$(case)"))
-
-        plt = plot(; title =  L"$\tilde{u}$ evolution, case " * "$(case)")
-        plot!(plt, Tdata, ps'; w = 3.0, label = "Dynamics solve", palette = :tab10)
-        plot!(plt, Tdata, p_'; w = 4.0, label = "Encoder prediction", style = :dash, palette = :tab10)
-        png(plt, joinpath(outdir, "compare_p_case$(case)"))
-    end
+    # for (i, case) in  enumerate(_Ib)
+    #     ev = jldopen(joinpath(outdir, "evolve$(case).jld2"))
+    #
+    #     ps = ev["Ppred"]
+    #     Ue = ev["Upred"]
+    #
+    #     _p = _ps[:, i, :]
+    #     Uh = _Upred[:, :, i, :] # encoder/decoder prediction
+    #     Ud = _Udata[:, :, i, :]
+    #
+    #     fieldplot(Xdata, Tdata, Uh, Ue, grid, outdir, "compare", case)
+    #
+    #     # Compare u
+    #     println("#=======================#")
+    #     println("Dynamics Solve")
+    #     @show norm(Ue - Ud, 2) / length(Ud)
+    #     @show norm(Ue - Ud, Inf)
+    #
+    #     println("#=======================#")
+    #     println("Encoder Prediction")
+    #     @show norm(Uh - Ud, 2) / length(Ud)
+    #     @show norm(Uh - Ud, Inf)
+    #
+    #     ###
+    #     # Compare ũ
+    #     ###
+    #
+    #     println("#=======================#")
+    #     println("Dynamics Solve vs Encoder Prediction")
+    #     @show norm(ps - _p, 2) / length(ps)
+    #     @show norm(ps - _p, Inf)
+    #
+    #     plt = plot(; title = L"$\tilde{u}$ distribution, case " * "$(case)")
+    #     plt = make_param_scatterplot(_p, Tdata; plt, label = "Encoder prediction", color = :reds, cbar = false)
+    #     plt = make_param_scatterplot(ps, Tdata; plt, label = "Dynamics solve", color = :blues, cbar = false)
+    #     png(plt, joinpath(outdir, "compare_p_scatter_case$(case)"))
+    #
+    #     plt = plot(; title = L"$\tilde{u}$ evolution, case " * "$(case)")
+    #     plot!(plt, Tdata, ps'; w = 3.0, label = "Dynamics solve", palette = :tab10)
+    #     plot!(plt, Tdata, _p'; w = 4.0, label = "Encoder prediction", style = :dash, palette = :tab10)
+    #     png(plt, joinpath(outdir, "compare_p_case$(case)"))
+    # end
+    #
+    # for (i, case) in  enumerate(Ib_)
+    #     ev = jldopen(joinpath(outdir, "evolve$(case).jld2"))
+    #
+    #     ps = ev["Ppred"]
+    #     Ue = ev["Upred"]
+    #
+    #     p_ = ps_[:, i, :]
+    #     Uh = Upred_[:, :, i, :] # encoder/decoder prediction
+    #     Ud = Udata_[:, :, i, :]
+    #
+    #     fieldplot(Xdata, Tdata, Uh, Ue, grid, outdir, "compare", case)
+    #
+    #     # Compare u
+    #     println("#=======================#")
+    #     println("Dynamics Solve")
+    #     @show norm(Ue - Ud, 2) / length(Ud)
+    #     @show norm(Ue - Ud, Inf)
+    #
+    #     println("#=======================#")
+    #     println("Encoder Prediction")
+    #     @show norm(Uh - Ud, 2) / length(Ud)
+    #     @show norm(Uh - Ud, Inf)
+    #
+    #     ###
+    #     # Compare ũ
+    #     ###
+    #
+    #     println("#=======================#")
+    #     println("Dynamics Solve vs Encoder Prediction")
+    #     @show norm(ps - p_, 2) / length(ps)
+    #     @show norm(ps - p_, Inf)
+    #
+    #     plt = plot(; title = L"$\tilde{u}$ distribution, case " * "$(case)")
+    #     plt = make_param_scatterplot(p_, Tdata; plt, label = "Encoder prediction", color = :reds, cbar = false)
+    #     plt = make_param_scatterplot(ps, Tdata; plt, label = "Dynamics solve", color = :blues, cbar = false)
+    #     png(plt, joinpath(outdir, "compare_p_scatter_case$(case)"))
+    #
+    #     plt = plot(; title =  L"$\tilde{u}$ evolution, case " * "$(case)")
+    #     plot!(plt, Tdata, ps'; w = 3.0, label = "Dynamics solve", palette = :tab10)
+    #     plot!(plt, Tdata, p_'; w = 4.0, label = "Encoder prediction", style = :dash, palette = :tab10)
+    #     png(plt, joinpath(outdir, "compare_p_case$(case)"))
+    # end
 
     #==============#
     # Done
@@ -405,6 +405,8 @@ function evolve_CAE(
     verbose::Bool = true,
     device = Lux.cpu_device(),
 )
+    mkpath(outdir)
+
     # load data
     Xdata, Tdata, mu, Udata, md_data = loaddata(datafile)
 
@@ -448,8 +450,8 @@ function evolve_CAE(
     Ud_perm = permutedims(Ud_norm, (2, 1, 3))
     Ud_resh = reshape(Ud_perm, grid..., out_dim, Nt) # [Nx, Ny, out_dim, Nt]
 
-    _ps = encoder[1](Ud_resh, encoder[2], encoder[3])[1]
-    p0 = _ps[:, 1]
+    pl = encoder[1](Ud_resh, encoder[2], encoder[3])[1]
+    p0 = pl[:, 1]
 
     #==============#
     # make model
@@ -478,10 +480,10 @@ function evolve_CAE(
     )
 
     #==============#
-    # visualization
+    # analysis
     #==============#
 
-    mkpath(outdir)
+    Ul = eval_model(model, Xdata, pl, getaxes(p0); device)
 
     # field visualizations
     grid = get_prob_grid(prob)
@@ -498,7 +500,7 @@ function evolve_CAE(
 
     # save files
     filename = joinpath(outdir, "evolve$case.jld2")
-    jldsave(filename; Xdata, Tdata, Udata = Ud, Upred = Up, Ppred = ps, Plrnd = _ps)
+    jldsave(filename; Xdata, Tdata, Udata = Ud, Upred = Up, Ppred = ps, Plrnd = pl, Ulrnd = Ul)
 
     Xdata, Tdata, Ud, Up, ps
 end

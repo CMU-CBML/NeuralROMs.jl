@@ -1,27 +1,21 @@
 #
 using NeuralROMs
-using JLD2, TSne
-using Random, Lux, NNlib, MLUtils
+using Random, Lux, NNlib, MLUtils, JLD2
 using Plots, ColorSchemes, LaTeXStrings
 
 #======================================================#
 
-function get_prob_grid(prob::NeuralROMs.AbstractPDEProblem)
-    if prob isa Advection1D
-        (128,)
-    elseif prob isa BurgersViscous1D
-        (1024,)
-        # (2048,)
-    elseif prob isa KuramotoSivashinsky1D
-        (256,)
-    elseif prob isa Advection2D
-        (128,128,)
-    elseif prob isa BurgersViscous2D
-        (512,512,)
-    else
-        throw(ErrorException("Unsupported problem type."))
-    end
-end
+get_prob_domain(::Advection1D) = (-1f0, 1f0)
+get_prob_domain(::Advection2D) = (-1f0, 1f0), (-1f0, 1f0)
+get_prob_domain(::BurgersViscous1D) = (0f0, 2f0)
+get_prob_domain(::BurgersViscous2D) = (-0.25f0, 0.75f0), (-0.25f0, 0.75f0)
+get_prob_domain(::KuramotoSivashinsky1D) = Float32.(-pi, pi)
+
+get_prob_grid(::Advection1D) = (128,)
+get_prob_grid(::Advection2D) = (128, 128)
+get_prob_grid(::BurgersViscous1D) = (1024,)
+get_prob_grid(::BurgersViscous2D) = (512, 512)
+get_prob_grid(::KuramotoSivashinsky1D) = (256,)
 
 #======================================================#
 
@@ -207,7 +201,7 @@ function convINR_network(
 end
 #======================================================#
 
-function loaddata(datafile::String)
+function loaddata(datafile::String; verbose::Bool = true)
 
     data = jldopen(datafile)
     x = data["x"]
@@ -229,8 +223,10 @@ function loaddata(datafile::String)
     in_dim  = size(x, 1)
     out_dim = size(u, 1)
 
-    println("input size $in_dim with $(size(x, 2)) points per trajectory.")
-    println("output size $out_dim.")
+    if verbose
+        println("input size $in_dim with $(size(x, 2)) points per trajectory.")
+        println("output size $out_dim.")
+    end
 
     @assert eltype(x) === Float32
     @assert eltype(u) === Float32
@@ -314,9 +310,34 @@ end
 function eval_model(
     model::NeuralROMs.AbstractNeuralModel,
     x::AbstractArray,
-    p::AbstractArray;
+    p::AbstractMatrix,
+    ax; # (ComponentArray.Axis,)
+    batchsize = 1,
+    device = Lux.gpu_device(),
+)
+    us = []
+
+    x = x |> device
+    p = p |> device
+    model = model |> device
+
+    for i in axes(p, 2)
+        q = ComponentArray(p[:, i], ax)
+        u = model(x, q) |> Lux.cpu_device()
+        # u = eval_model(model, x, q; batchsize, device)
+
+        push!(us, u)
+    end
+
+    cat(us...; dims = 3)
+end
+
+function eval_model(
+    model::NeuralROMs.AbstractNeuralModel,
+    x::AbstractArray,
+    p::AbstractVector;
     batchsize = numobs(x) ÷ 100,
-    device = Lux.cpu_device(),
+    device = Lux.gpu_device(),
 )
     loader = MLUtils.DataLoader(x; batchsize, shuffle = false, partial = true)
 
@@ -329,21 +350,20 @@ function eval_model(
 
     y = ()
     for batch in loader
-        yy = model(batch, p)
+        yy = model(batch, p) |> Lux.cpu_device()
         y = (y..., yy)
     end
 
-    hcat(y...) |> Lux.cpu_device()
+    hcat(y...)
 end
 
 function eval_model(
     model::NTuple{3, Any},
     x;
     batchsize = numobs(x) ÷ 100,
-    device = Lux.cpu_device(),
+    device = Lux.gpu_device(),
 )
     NN, p, st = model
-
     loader = MLUtils.DataLoader(x; batchsize, shuffle = false, partial = true)
 
     p, st = (p, st) |> device
@@ -355,11 +375,11 @@ function eval_model(
 
     y = ()
     for batch in loader
-        yy = NN(batch, p, st)[1]
+        yy = NN(batch, p, st)[1] |> Lux.cpu_device()
         y = (y..., yy)
     end
 
-    hcat(y...) |> Lux.cpu_device()
+    hcat(y...)
 end
 
 #======================================================#
@@ -541,7 +561,7 @@ function make_optimizer(
         schedules = (schedule_warmup, schedules...,)
         early_stoppings = (early_stopping_warmup, early_stoppings...,)
     end
-    
+
     opts, nepochs, schedules, early_stoppings
 end
 
