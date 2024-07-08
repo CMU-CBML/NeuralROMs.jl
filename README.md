@@ -3,6 +3,8 @@
 This repository implements machine learning (ML) based reduced order models (ROMs).
 Specifically, we introduce [smooth neural field ROM (SNF-ROM)](https://arxiv.org/abs/2405.14890) for solving advection dominated PDE problems.
 
+Check out the [main repository](https://github.com/vpuri3/NeuralROMs.jl) for up-to-date results.
+
 ## SNF-ROM: Projection-based nonlinear reduced order modeling with smooth neural fields
 
 ### Abstract
