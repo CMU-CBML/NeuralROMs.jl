@@ -221,11 +221,7 @@ Random.seed!(rng, 123)
 
 datafile = joinpath(@__DIR__, "data_reg.jld2")
 modeldir = joinpath(@__DIR__, "kan")
-<<<<<<< HEAD:examples/regularization/kan.jl
 modelfile = joinpath(modeldir, "model_08.jld2")
-=======
-modelfile = joinpath(modeldir, "model_07.jld2")
->>>>>>> master:experiments_SNFROM/regularization/kan.jl
 device = Lux.gpu_device()
 
 E = 100
