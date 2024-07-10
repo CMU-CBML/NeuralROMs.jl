@@ -3,7 +3,7 @@ using LinearAlgebra, HDF5, JLD2, LaTeXStrings
 using CairoMakie
 
 function makeplots(
-    datafile,
+    datafile::String,
     outdir::String,
     casename::String;
     ifcrom::Bool = false,
